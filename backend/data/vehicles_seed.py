@@ -286,6 +286,12 @@ VEHICLES = [
     ('Volkswagen', 'Golf', 'Mk8 (2020-now)', '2.0 TDI', 150, 110, 'D', 'Bosch MD1CP002'),
     ('Volkswagen', 'Golf GTI', 'Mk8 (2020-now)', '2.0 TSI', 245, 180, 'P', 'Bosch MG1CS111'),
     ('Volkswagen', 'Golf R', 'Mk8 (2021-now)', '2.0 TSI', 320, 235, 'P', 'Bosch MG1CS111'),
+    ('Volkswagen', 'Golf GTE', 'Mk7 5G (2014-2020)', '1.4 TSI eHybrid', 204, 150, 'H', 'Bosch MED17.5.21|Continental SIMOS 18.10'),
+    ('Volkswagen', 'Golf GTE', 'Mk8 (2020-now)', '1.4 TSI eHybrid', 245, 180, 'H', 'Bosch MG1CS111'),
+    ('Volkswagen', 'Golf GTD', 'Mk7 5G (2013-2020)', '2.0 TDI', 184, 135, 'D', 'Bosch EDC17C64|Bosch EDC17C74'),
+    ('Volkswagen', 'Golf GTD', 'Mk8 (2020-now)', '2.0 TDI', 200, 147, 'D', 'Bosch MD1CP002'),
+    ('Volkswagen', 'Polo GTI', 'AW (2017-now)', '2.0 TSI', 207, 152, 'P', 'Bosch MG1CS002'),
+    ('Volkswagen', 'Passat GTE', 'B8 (2014-now)', '1.4 TSI eHybrid', 218, 160, 'H', 'Bosch MED17.5.25'),
     ('Volkswagen', 'Passat', 'B6 (2005-2010)', '2.0 TDI', 140, 103, 'D', 'Bosch EDC16U31|Bosch EDC17CP14'),
     ('Volkswagen', 'Passat', 'B6 (2005-2010)', '2.0 TDI', 170, 125, 'D', 'Bosch EDC17CP14'),
     ('Volkswagen', 'Passat', 'B7 (2010-2014)', '2.0 TDI', 140, 103, 'D', 'Bosch EDC17C46'),
@@ -693,21 +699,31 @@ def get_generations(brand: str, model: str):
 
 
 def get_engines(brand: str, model: str, generation: str):
+    matching = [v for v in VEHICLES if v[0] == brand and v[1] == model and v[2] == generation]
+    name_counts = {}
+    for v in matching:
+        name_counts[v[3]] = name_counts.get(v[3], 0) + 1
     items = []
-    for v in VEHICLES:
-        if v[0] == brand and v[1] == model and v[2] == generation:
-            items.append({
-                'name': v[3],
-                'hp': v[4],
-                'kw': v[5],
-                'fuel': {'P': 'Petrol', 'D': 'Diesel', 'H': 'Hybrid', 'E': 'Electric'}.get(v[6], 'Other'),
-                'ecus': v[7].split('|') if v[7] else [],
-            })
+    for v in matching:
+        # If multiple engines share same name, suffix with HP for clarity
+        name = f"{v[3]} {v[4]}hp" if name_counts[v[3]] > 1 else v[3]
+        items.append({
+            'name': name,
+            'hp': v[4],
+            'kw': v[5],
+            'fuel': {'P': 'Petrol', 'D': 'Diesel', 'H': 'Hybrid', 'E': 'Electric'}.get(v[6], 'Other'),
+            'ecus': v[7].split('|') if v[7] else [],
+        })
     return items
 
 
 def get_ecus(brand: str, model: str, generation: str, engine: str):
-    for v in VEHICLES:
-        if v[0] == brand and v[1] == model and v[2] == generation and v[3] == engine:
+    matching = [v for v in VEHICLES if v[0] == brand and v[1] == model and v[2] == generation]
+    name_counts = {}
+    for v in matching:
+        name_counts[v[3]] = name_counts.get(v[3], 0) + 1
+    for v in matching:
+        name = f"{v[3]} {v[4]}hp" if name_counts[v[3]] > 1 else v[3]
+        if name == engine:
             return v[7].split('|') if v[7] else []
     return []
