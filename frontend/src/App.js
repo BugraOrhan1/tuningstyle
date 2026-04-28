@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { Toaster } from './components/ui/toaster';
 import { Loader2 } from 'lucide-react';
@@ -28,12 +28,13 @@ const LoadingScreen = () => (
 
 const PrivateRoute = ({ children, adminOnly = false }) => {
   const { user, loadingAuth } = useApp();
+  const location = useLocation();
   if (loadingAuth) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
   if (adminOnly && !user.is_admin) return <Navigate to="/dashboard" replace />;
   if (!adminOnly && user.is_admin) {
     // Admin shouldn't access user-only routes (upload, credits, tuning-specs, files)
-    const path = window.location.pathname;
+    const path = location.pathname;
     const adminBlockedPaths = ['/upload', '/credits', '/tuning-specs', '/files', '/dashboard'];
     if (adminBlockedPaths.some(p => path.startsWith(p))) {
       return <Navigate to="/admin" replace />;
@@ -83,12 +84,12 @@ function AppRoutes() {
 function App() {
   return (
     <div className="App">
-      <BrowserRouter>
+      <HashRouter>
         <AppProvider>
           <AppRoutes />
           <Toaster />
         </AppProvider>
-      </BrowserRouter>
+      </HashRouter>
     </div>
   );
 }
