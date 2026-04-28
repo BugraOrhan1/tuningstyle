@@ -1,0 +1,4 @@
+/* App level styles - keep minimal, body styles in index.css */
+.App {
+  min-height: 100vh;
+}
