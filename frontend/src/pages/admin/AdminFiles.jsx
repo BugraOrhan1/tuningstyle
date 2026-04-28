@@ -10,13 +10,27 @@ export const AdminFiles = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    setLoading(true);
-    try { setFiles(await adminApi.files(filter)); } catch {}
-    setLoading(false);
-  };
+  useEffect(() => {
+    let cancelled = false;
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [filter]);
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await adminApi.files(filter);
+        if (!cancelled) setFiles(data);
+      } catch {
+        if (!cancelled) setFiles([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filter]);
 
   const filtered = files.filter(f =>
     !search ||

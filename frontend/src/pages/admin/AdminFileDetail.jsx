@@ -15,12 +15,27 @@ export const AdminFileDetail = () => {
   const [uploading, setUploading] = useState(false);
   const tunedFileRef = useRef(null);
 
-  const load = async () => {
-    try { setFile(await filesApi.get(id)); } catch {}
-    setLoading(false);
-  };
+  useEffect(() => {
+    let cancelled = false;
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await filesApi.get(id);
+        if (!cancelled) setFile(data);
+      } catch {
+        if (!cancelled) setFile(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   const handleDownload = async (kind) => {
     const url = filesApi.downloadUrl(file.id, kind);
