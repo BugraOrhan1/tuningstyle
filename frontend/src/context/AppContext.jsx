@@ -12,7 +12,6 @@ export const useApp = () => {
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('fct_token'));
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [files, setFiles] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -23,34 +22,54 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('fct_lang', language);
   }, [language]);
 
-  // Bootstrap user from token
+  // Bootstrap user from auth cookie
   useEffect(() => {
-    if (!token) {
-      setLoadingAuth(false);
-      return;
-    }
+    let cancelled = false;
+
     authApi.me()
-      .then(u => { setUser(u); if (u.language) setLanguage(u.language); })
-      .catch(() => {
-        localStorage.removeItem('fct_token');
-        setToken(null);
+      .then(u => {
+        if (cancelled) return;
+        setUser(u);
+        if (u.language) setLanguage(u.language);
       })
-      .finally(() => setLoadingAuth(false));
-  }, [token]);
+      .catch((error) => {
+        if (!cancelled) setUser(null);
+        console.warn('Auth bootstrap failed:', error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingAuth(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const refreshFiles = useCallback(async () => {
     if (!user) return;
-    try { setFiles(await filesApi.list()); } catch {}
+    try {
+      setFiles(await filesApi.list());
+    } catch (error) {
+      console.error('Failed to refresh files:', error);
+    }
   }, [user]);
 
   const refreshTransactions = useCallback(async () => {
     if (!user) return;
-    try { setTransactions(await creditsApi.transactions()); } catch {}
+    try {
+      setTransactions(await creditsApi.transactions());
+    } catch (error) {
+      console.error('Failed to refresh transactions:', error);
+    }
   }, [user]);
 
   const refreshNotifications = useCallback(async () => {
     if (!user) return;
-    try { setNotifications(await notificationsApi.list()); } catch {}
+    try {
+      setNotifications(await notificationsApi.list());
+    } catch (error) {
+      console.error('Failed to refresh notifications:', error);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -70,8 +89,6 @@ export const AppProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const data = await authApi.login({ email, password });
-      localStorage.setItem('fct_token', data.token);
-      setToken(data.token);
       setUser(data.user);
       return { success: true, user: data.user };
     } catch (e) {
@@ -82,8 +99,6 @@ export const AppProvider = ({ children }) => {
   const register = async (data) => {
     try {
       const res = await authApi.register(data);
-      localStorage.setItem('fct_token', res.token);
-      setToken(res.token);
       setUser(res.user);
       return { success: true, user: res.user };
     } catch (e) {
@@ -91,9 +106,12 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('fct_token');
-    setToken(null);
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      console.warn('Logout endpoint failed:', error);
+    }
     setUser(null);
     setFiles([]);
     setTransactions([]);
@@ -146,7 +164,7 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      user, token, loadingAuth, files, transactions, notifications, language,
+      user, loadingAuth, files, transactions, notifications, language,
       setLanguage, t, login, register, logout, updateUser, refreshUser,
       purchaseCredits, submitFile, refreshFiles, refreshNotifications,
     }}>

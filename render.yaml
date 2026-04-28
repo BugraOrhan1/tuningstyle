@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: tuningstyle-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DB_NAME
+        value: tuningstyle
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: MONGO_TIMEOUT_MS
+        value: "5000"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGO_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false

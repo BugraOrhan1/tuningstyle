@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Form, Header, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Form, Header, status, Response, Cookie
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -25,10 +25,17 @@ JWT_SECRET = os.environ.get('JWT_SECRET', 'fct-super-secret-key-change-in-produc
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRE_HOURS = 24 * 7
 ADMIN_EMAIL = 'admin@fast-chiptuningfiles.com'
+cors_origins_env = os.environ.get('CORS_ORIGINS', 'https://bugraorhan1.github.io,http://localhost:3000,http://127.0.0.1:3000')
+cors_origins = [origin.strip() for origin in cors_origins_env.split(',') if origin.strip()]
+AUTH_COOKIE_NAME = 'fct_token'
+cookie_secure = os.environ.get('COOKIE_SECURE', 'false').lower() == 'true'
+cookie_samesite = os.environ.get('COOKIE_SAMESITE', 'none' if cookie_secure else 'lax')
 
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://127.0.0.1:27017')
+db_name = os.environ.get('DB_NAME', 'tuningstyle')
+mongo_timeout_ms = int(os.environ.get('MONGO_TIMEOUT_MS', '2000'))
+client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=mongo_timeout_ms)
+db = client[db_name]
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -245,6 +252,26 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def set_auth_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=AUTH_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=cookie_secure,
+        samesite=cookie_samesite,
+        max_age=JWT_EXPIRE_HOURS * 3600,
+        path='/',
+    )
+
+
+def clear_auth_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=AUTH_COOKIE_NAME,
+        path='/',
+        samesite=cookie_samesite,
+    )
+
+
 def public_user(u: dict) -> dict:
     if not u:
         return None
@@ -304,10 +331,17 @@ def public_file(f: dict) -> dict:
     }
 
 
-async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
-    if not authorization or not authorization.startswith('Bearer '):
+async def get_current_user(
+    authorization: Optional[str] = Header(None),
+    cookie_token: Optional[str] = Cookie(None, alias=AUTH_COOKIE_NAME),
+) -> dict:
+    token = None
+    if authorization and authorization.startswith('Bearer '):
+        token = authorization.split(' ', 1)[1]
+    elif cookie_token:
+        token = cookie_token
+    if not token:
         raise HTTPException(status_code=401, detail='Missing token')
-    token = authorization.split(' ', 1)[1]
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id = payload.get('sub')
@@ -341,7 +375,7 @@ async def add_notification(user_id: str, ntype: str, title: str, body: str = '',
 
 # ---------- Auth Routes ----------
 @api_router.post("/auth/register")
-async def register(data: RegisterIn):
+async def register(data: RegisterIn, response: Response):
     existing = await db.users.find_one({'email': data.email.lower()})
     if existing:
         raise HTTPException(status_code=400, detail='Email already registered')
@@ -365,11 +399,12 @@ async def register(data: RegisterIn):
     }
     await db.users.insert_one(user)
     token = create_token(user['_id'])
+    set_auth_cookie(response, token)
     return {'token': token, 'user': public_user(user)}
 
 
 @api_router.post("/auth/login")
-async def login(data: LoginIn):
+async def login(data: LoginIn, response: Response):
     user = await db.users.find_one({'email': data.email.lower()})
     if not user or not verify_password(data.password, user['password']):
         raise HTTPException(status_code=401, detail='Invalid email or password')
@@ -378,7 +413,14 @@ async def login(data: LoginIn):
         await db.users.update_one({'_id': user['_id']}, {'$set': {'is_admin': True}})
         user['is_admin'] = True
     token = create_token(user['_id'])
+    set_auth_cookie(response, token)
     return {'token': token, 'user': public_user(user)}
+
+
+@api_router.post("/auth/logout")
+async def logout(response: Response):
+    clear_auth_cookie(response)
+    return {'success': True}
 
 
 @api_router.get("/auth/me")
@@ -826,25 +868,28 @@ async def options_tools():
 # Seed admin user on startup
 @app.on_event("startup")
 async def seed_admin():
-    existing = await db.users.find_one({'email': ADMIN_EMAIL})
-    if not existing:
-        admin_user = {
-            '_id': str(uuid.uuid4()),
-            'email': ADMIN_EMAIL,
-            'password': hash_password('admin1234'),
-            'firstName': 'Admin',
-            'lastName': 'User',
-            'company': 'Fast Chiptuningfiles',
-            'phone': '',
-            'country': 'Netherlands',
-            'vatNumber': '',
-            'credits': 9999,
-            'is_admin': True,
-            'language': 'en',
-            'createdAt': now_iso(),
-        }
-        await db.users.insert_one(admin_user)
-        logging.info(f"Seeded admin user: {ADMIN_EMAIL} / admin1234")
+    try:
+        existing = await db.users.find_one({'email': ADMIN_EMAIL})
+        if not existing:
+            admin_user = {
+                '_id': str(uuid.uuid4()),
+                'email': ADMIN_EMAIL,
+                'password': hash_password('admin1234'),
+                'firstName': 'Admin',
+                'lastName': 'User',
+                'company': 'Fast Chiptuningfiles',
+                'phone': '',
+                'country': 'Netherlands',
+                'vatNumber': '',
+                'credits': 9999,
+                'is_admin': True,
+                'language': 'en',
+                'createdAt': now_iso(),
+            }
+            await db.users.insert_one(admin_user)
+            logging.info(f"Seeded admin user: {ADMIN_EMAIL} / admin1234")
+    except Exception as exc:
+        logging.warning(f"Skipping admin seed because MongoDB is unavailable: {exc}")
 
 
 app.include_router(api_router)
@@ -852,7 +897,7 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

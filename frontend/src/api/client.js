@@ -1,18 +1,14 @@
 import axios from 'axios';
 
-const BASE = (process.env.REACT_APP_BACKEND_URL || '') + '/api';
+const backendRoot = (process.env.REACT_APP_BACKEND_URL || 'http://127.0.0.1:8001').replace(/\/$/, '');
+const BASE = `${backendRoot}/api`;
 
-const api = axios.create({ baseURL: BASE });
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('fct_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+const api = axios.create({ baseURL: BASE, withCredentials: true });
 
 export const authApi = {
   register: (data) => api.post('/auth/register', data).then(r => r.data),
   login: (data) => api.post('/auth/login', data).then(r => r.data),
+  logout: () => api.post('/auth/logout').then(r => r.data),
   me: () => api.get('/auth/me').then(r => r.data),
   updateProfile: (data) => api.patch('/auth/me', data).then(r => r.data),
   changePassword: (data) => api.post('/auth/change-password', data).then(r => r.data),
@@ -72,10 +68,9 @@ export const adminApi = {
   stats: () => api.get('/admin/stats').then(r => r.data),
 };
 
-// Helper to download protected file via fetch + token
+// Helper to download protected file via cookie-based auth
 export const downloadProtected = async (url, suggestedName) => {
-  const token = localStorage.getItem('fct_token');
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const res = await fetch(url, { credentials: 'include' });
   if (!res.ok) throw new Error('Download failed');
   const blob = await res.blob();
   const blobUrl = URL.createObjectURL(blob);

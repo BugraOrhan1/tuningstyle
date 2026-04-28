@@ -84,8 +84,8 @@ export const Support = () => {
         <div className="bg-white rounded shadow-sm border border-gray-100 p-6">
           <h2 className="font-semibold text-fct-dark mb-4">{t('faq')}</h2>
           <Accordion type="single" collapsible>
-            {faqs.map((f, i) => (
-              <AccordionItem key={i} value={`item-${i}`}>
+            {faqs.map((f) => (
+              <AccordionItem key={f.q} value={f.q}>
                 <AccordionTrigger className="text-left text-sm font-medium">{f.q}</AccordionTrigger>
                 <AccordionContent className="text-sm text-fct-muted">{f.a}</AccordionContent>
               </AccordionItem>

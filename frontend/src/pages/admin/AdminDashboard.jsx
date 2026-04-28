@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { adminApi } from '../../api/client';
 import { Users, FileText, Clock, CheckCircle2, RefreshCw } from 'lucide-react';
@@ -9,17 +9,21 @@ export const AdminDashboard = () => {
   const [recentFiles, setRecentFiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [s, files] = await Promise.all([adminApi.stats(), adminApi.files()]);
       setStats(s);
       setRecentFiles(files.slice(0, 10));
-    } catch {}
+    } catch (error) {
+      console.error('Failed to load admin dashboard:', error);
+    }
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   return (
     <DashboardLayout>

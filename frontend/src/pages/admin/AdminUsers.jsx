@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { adminApi } from '../../api/client';
 import { Search, Plus, Minus, Shield } from 'lucide-react';
@@ -16,12 +16,20 @@ export const AdminUsers = () => {
   const [reason, setReason] = useState('');
   const { toast } = useToast();
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    try { setUsers(await adminApi.users()); } catch {}
+    try {
+      setUsers(await adminApi.users());
+    } catch (error) {
+      console.error('Failed to load users:', error);
+      toast({ title: 'Failed to load users', variant: 'destructive' });
+    }
     setLoading(false);
-  };
-  useEffect(() => { load(); }, []);
+  }, [toast]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const filtered = users.filter(u =>
     !search || u.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -38,7 +46,10 @@ export const AdminUsers = () => {
       setAmount('');
       setReason('');
       load();
-    } catch { toast({ title: 'Failed', variant: 'destructive' }); }
+    } catch (error) {
+      console.error('Failed to adjust credits:', error);
+      toast({ title: 'Failed', variant: 'destructive' });
+    }
   };
 
   return (

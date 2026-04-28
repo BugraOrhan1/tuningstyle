@@ -16,7 +16,9 @@ export const TuningSpecs = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    vehiclesApi.brands().then(setBrands).catch(() => {});
+    vehiclesApi.brands().then(setBrands).catch((error) => {
+      console.error('Failed to load brands:', error);
+    });
   }, []);
 
   const filteredBrands = brands.filter(b =>
@@ -32,7 +34,9 @@ export const TuningSpecs = () => {
     try {
       const m = await vehiclesApi.models(brand);
       setModels(m.filter(x => x !== 'Otherwise, namely'));
-    } catch {}
+    } catch (error) {
+      console.error('Failed to load brand models:', error);
+    }
     setLoading(false);
   };
 
@@ -52,7 +56,9 @@ export const TuningSpecs = () => {
           const engs = await vehiclesApi.engines(selectedBrand, model, gen);
           setEnginesByGen(prev => ({ ...prev, [`${model}::${gen}`]: engs.filter(e => e.name !== 'Otherwise, namely') }));
         }
-      } catch {}
+      } catch (error) {
+        console.error('Failed to expand model:', error);
+      }
     }
   };
 
@@ -148,10 +154,11 @@ export const TuningSpecs = () => {
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {(enginesByGen[`${model}::${gen}`] || []).map((eng, i) => {
+                                      {(enginesByGen[`${model}::${gen}`] || []).map((eng) => {
                                         const g = estimateGain(eng);
+                                        const engineKey = `${model}-${gen}-${eng.name}-${eng.hp}-${eng.kw}`;
                                         return (
-                                          <tr key={i} className="border-t border-gray-100 hover:bg-orange-50/30">
+                                          <tr key={engineKey} className="border-t border-gray-100 hover:bg-orange-50/30">
                                             <td className="px-3 py-2 font-medium">{eng.name}</td>
                                             <td className="px-3 py-2 text-fct-muted">{eng.hp} hp / {eng.kw} kW</td>
                                             <td className="px-3 py-2"><span className="inline-flex items-center gap-1 text-green-700 font-semibold"><TrendingUp className="w-3 h-3" />{g.hp}</span></td>

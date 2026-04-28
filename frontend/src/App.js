@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { Toaster } from './components/ui/toaster';
 import { Loader2 } from 'lucide-react';
@@ -84,12 +84,12 @@ function AppRoutes() {
 function App() {
   return (
     <div className="App">
-      <HashRouter>
+      <BrowserRouter>
         <AppProvider>
           <AppRoutes />
           <Toaster />
         </AppProvider>
-      </HashRouter>
+      </BrowserRouter>
     </div>
   );
 }

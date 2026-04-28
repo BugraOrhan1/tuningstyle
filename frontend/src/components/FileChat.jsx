@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { filesApi } from '../api/client';
 import { Send, Loader2 } from 'lucide-react';
@@ -11,20 +11,21 @@ export const FileChat = ({ fileId }) => {
   const [sending, setSending] = useState(false);
   const bottomRef = useRef(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const data = await filesApi.getMessages(fileId);
       setMessages(data);
-    } catch {}
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    }
     setLoading(false);
-  };
+  }, [fileId]);
 
   useEffect(() => {
     load();
     const interval = setInterval(load, 10000);
     return () => clearInterval(interval);
-    // eslint-disable-next-line
-  }, [fileId]);
+  }, [load]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -38,7 +39,9 @@ export const FileChat = ({ fileId }) => {
       const msg = await filesApi.sendMessage(fileId, input.trim());
       setMessages(prev => [...prev, msg]);
       setInput('');
-    } catch {}
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
     setSending(false);
   };
 

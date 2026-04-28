@@ -108,51 +108,93 @@ export const UploadFile = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    vehiclesApi.brands().then(setBrands).catch(() => {});
-    optionsApi.tuningTypes().then(setTuningTypes).catch(() => {});
-    optionsApi.additional().then(setAdditionalOptions).catch(() => {});
-    optionsApi.tools().then(setTools).catch(() => {});
-  }, []);
+    vehiclesApi.brands().then(setBrands).catch((error) => {
+      console.error('Failed to load brands:', error);
+      toast({ title: 'Failed to load brands', variant: 'destructive' });
+    });
+    optionsApi.tuningTypes().then(setTuningTypes).catch((error) => {
+      console.error('Failed to load tuning types:', error);
+      toast({ title: 'Failed to load tuning types', variant: 'destructive' });
+    });
+    optionsApi.additional().then(setAdditionalOptions).catch((error) => {
+      console.error('Failed to load additional options:', error);
+      toast({ title: 'Failed to load additional options', variant: 'destructive' });
+    });
+    optionsApi.tools().then(setTools).catch((error) => {
+      console.error('Failed to load tools:', error);
+      toast({ title: 'Failed to load tools', variant: 'destructive' });
+    });
+  }, [toast]);
 
   // Cascading
   useEffect(() => {
+    let cancelled = false;
+
     if (form.brand && form.brand !== OTHER) {
-      vehiclesApi.models(form.brand).then(setModels);
+      vehiclesApi.models(form.brand).then((data) => {
+        if (!cancelled) setModels(data);
+      }).catch((error) => {
+        console.error('Failed to load models:', error);
+        if (!cancelled) setModels([]);
+      });
     } else if (form.brand === OTHER) {
       setModels([OTHER]);
     } else {
       setModels([]);
     }
     setForm(prev => ({ ...prev, model: '', modelCustom: '', generation: '', engine: '', ecu: '', engineHp: '', engineKw: '' }));
-    // eslint-disable-next-line
+
+    return () => {
+      cancelled = true;
+    };
   }, [form.brand]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const brandToUse = form.brand === OTHER ? form.brandCustom : form.brand;
     if (form.model && form.model !== OTHER && brandToUse) {
-      vehiclesApi.generations(brandToUse, form.model).then(setGenerations);
+      vehiclesApi.generations(brandToUse, form.model).then((data) => {
+        if (!cancelled) setGenerations(data);
+      }).catch((error) => {
+        console.error('Failed to load generations:', error);
+        if (!cancelled) setGenerations([]);
+      });
     } else if (form.model === OTHER) {
       setGenerations([OTHER]);
     } else {
       setGenerations([]);
     }
     setForm(prev => ({ ...prev, generation: '', generationCustom: '', engine: '', ecu: '', engineHp: '', engineKw: '' }));
-    // eslint-disable-next-line
-  }, [form.model]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form.brand, form.brandCustom, form.model]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const brandToUse = form.brand === OTHER ? form.brandCustom : form.brand;
     const modelToUse = form.model === OTHER ? form.modelCustom : form.model;
     if (form.generation && form.generation !== OTHER && brandToUse && modelToUse) {
-      vehiclesApi.engines(brandToUse, modelToUse, form.generation).then(setEngines);
+      vehiclesApi.engines(brandToUse, modelToUse, form.generation).then((data) => {
+        if (!cancelled) setEngines(data);
+      }).catch((error) => {
+        console.error('Failed to load engines:', error);
+        if (!cancelled) setEngines([]);
+      });
     } else if (form.generation === OTHER) {
       setEngines([{ name: OTHER, hp: 0, kw: 0, fuel: 'Other', ecus: [] }]);
     } else {
       setEngines([]);
     }
     setForm(prev => ({ ...prev, engine: '', engineCustom: '', ecu: '', engineHp: '', engineKw: '' }));
-    // eslint-disable-next-line
-  }, [form.generation]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form.brand, form.brandCustom, form.model, form.modelCustom, form.generation]);
 
   useEffect(() => {
     const found = engines.find(e => e.name === form.engine);
@@ -170,7 +212,6 @@ export const UploadFile = () => {
     } else {
       setEcus([]);
     }
-    // eslint-disable-next-line
   }, [form.engine, engines]);
 
   const update = (k) => (e) => setForm(prev => ({ ...prev, [k]: e?.target ? e.target.value : e }));
@@ -203,7 +244,8 @@ export const UploadFile = () => {
   };
 
   const addAttachment = (f) => {
-    setAttachments(prev => [...prev, { file: f, title: f.name }]);
+    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    setAttachments(prev => [...prev, { id, file: f, title: f.name }]);
   };
 
   const handleSubmit = async (e) => {
@@ -502,17 +544,17 @@ export const UploadFile = () => {
             <input ref={attachInputRef} type="file" className="hidden" onChange={(e) => { if (e.target.files[0]) addAttachment(e.target.files[0]); e.target.value = ''; }} />
             {attachments.length > 0 && (
               <div className="mb-3 space-y-2">
-                {attachments.map((a, i) => (
-                  <div key={i} className="flex items-center gap-3 p-2 border border-gray-200 rounded">
+                {attachments.map((a) => (
+                  <div key={a.id} className="flex items-center gap-3 p-2 border border-gray-200 rounded">
                     <FileUp className="w-4 h-4 text-fct-muted" />
                     <input
                       value={a.title}
-                      onChange={(e) => setAttachments(prev => prev.map((x, j) => j === i ? { ...x, title: e.target.value } : x))}
+                      onChange={(e) => setAttachments(prev => prev.map((x) => x.id === a.id ? { ...x, title: e.target.value } : x))}
                       placeholder="Title"
                       className="flex-1 px-2 py-1 border-b border-transparent hover:border-gray-200 text-sm focus:outline-none focus:border-fct-orange"
                     />
                     <span className="text-xs text-fct-muted">{(a.file.size / 1024).toFixed(1)} KB</span>
-                    <button type="button" onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} className="p-1 hover:bg-gray-100 rounded">
+                    <button type="button" onClick={() => setAttachments(prev => prev.filter((x) => x.id !== a.id))} className="p-1 hover:bg-gray-100 rounded">
                       <X className="w-3 h-3" />
                     </button>
                   </div>

@@ -1,0 +1,28 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: tuningstyle-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: tuningstyle-api
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    env_file:
+      - backend/.env
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      DB_NAME: tuningstyle
+    ports:
+      - "8001:8001"
+
+volumes:
+  mongo_data:
