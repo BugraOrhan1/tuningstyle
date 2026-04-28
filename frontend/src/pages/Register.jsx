@@ -17,7 +17,7 @@ export const Register = () => {
 
   const update = (k) => (e) => setForm(prev => ({ ...prev, [k]: e.target.value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
       toast({ title: 'Passwords do not match', variant: 'destructive' });
@@ -28,24 +28,22 @@ export const Register = () => {
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      register(form);
-      toast({ title: 'Account created!', description: 'Welcome to Fast Chiptuningfiles.' });
-      navigate('/dashboard');
-      setLoading(false);
-    }, 600);
+    const { confirmPassword, ...payload } = form;
+    const result = await register(payload);
+    setLoading(false);
+    if (result.success) {
+      toast({ title: 'Account created!' });
+      navigate(result.user.is_admin ? '/admin' : '/dashboard');
+    } else {
+      toast({ title: 'Registration failed', description: result.error, variant: 'destructive' });
+    }
   };
 
   const Field = ({ label, k, type = 'text', required = true }) => (
     <div>
       <label className="block text-sm font-medium text-fct-dark mb-1.5">{label}{required && ' *'}</label>
-      <input
-        type={type}
-        required={required}
-        value={form[k]}
-        onChange={update(k)}
-        className="w-full px-3 py-2.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-fct-orange focus:ring-1 focus:ring-fct-orange"
-      />
+      <input type={type} required={required} value={form[k]} onChange={update(k)}
+        className="w-full px-3 py-2.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-fct-orange focus:ring-1 focus:ring-fct-orange" />
     </div>
   );
 
@@ -72,13 +70,9 @@ export const Register = () => {
             <Field label={t('country')} k="country" required={false} />
           </div>
           <Field label={t('vatNumber')} k="vatNumber" required={false} />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-fct-orange hover:bg-[#D45F25] text-white font-semibold py-3 rounded flex items-center justify-center gap-2 disabled:opacity-60"
-          >
-            {loading ? '...' : t('createAccount')}
-            <ChevronRight className="w-4 h-4" />
+          <button type="submit" disabled={loading}
+            className="w-full bg-fct-orange hover:bg-[#D45F25] text-white font-semibold py-3 rounded flex items-center justify-center gap-2 disabled:opacity-60">
+            {loading ? '...' : t('createAccount')}<ChevronRight className="w-4 h-4" />
           </button>
         </form>
       </div>

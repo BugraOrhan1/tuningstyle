@@ -13,19 +13,17 @@ export const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      const result = login(email, password);
-      if (result.success) {
-        toast({ title: 'Welcome back!', description: 'You are now logged in.' });
-        navigate('/dashboard');
-      } else {
-        toast({ title: 'Login failed', description: result.error, variant: 'destructive' });
-      }
-      setLoading(false);
-    }, 500);
+    const result = await login(email, password);
+    setLoading(false);
+    if (result.success) {
+      toast({ title: 'Welcome back!' });
+      navigate(result.user.is_admin ? '/admin' : '/dashboard');
+    } else {
+      toast({ title: 'Login failed', description: result.error, variant: 'destructive' });
+    }
   };
 
   const features = ['feature1', 'feature2', 'feature3', 'feature4'];
@@ -33,7 +31,6 @@ export const Login = () => {
   return (
     <AuthLayout>
       <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-        {/* Login Card */}
         <div className="bg-white rounded p-8 lg:p-10 shadow-sm">
           <div className="flex flex-col items-center mb-8">
             <div className="flex items-center gap-3 mb-2">
@@ -53,31 +50,17 @@ export const Login = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-fct-dark mb-1.5">{t('email')}</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-fct-orange focus:ring-1 focus:ring-fct-orange"
-              />
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-fct-orange focus:ring-1 focus:ring-fct-orange" />
             </div>
             <div>
               <label className="block text-sm font-medium text-fct-dark mb-1.5">{t('password')}</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-fct-orange focus:ring-1 focus:ring-fct-orange"
-              />
+              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-fct-orange focus:ring-1 focus:ring-fct-orange" />
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-fct-orange hover:bg-[#D45F25] text-white font-semibold py-3 rounded flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              {loading ? '...' : t('login')}
-              <ChevronRight className="w-4 h-4" />
+            <button type="submit" disabled={loading}
+              className="w-full bg-fct-orange hover:bg-[#D45F25] text-white font-semibold py-3 rounded flex items-center justify-center gap-2 disabled:opacity-60">
+              {loading ? '...' : t('login')}<ChevronRight className="w-4 h-4" />
             </button>
           </form>
           <div className="mt-6 space-y-2 text-sm">
@@ -85,8 +68,6 @@ export const Login = () => {
             <Link to="/register" className="text-fct-orange hover:underline block">{t('register')}</Link>
           </div>
         </div>
-
-        {/* Right side - Register CTA */}
         <div className="bg-white rounded p-8 lg:p-10 shadow-sm">
           <h2 className="text-2xl font-bold text-fct-dark mb-6">{t('noAccountYet')}</h2>
           <p className="font-semibold text-fct-dark mb-4">{t('asRegisteredUser')}</p>
@@ -100,20 +81,9 @@ export const Login = () => {
               </li>
             ))}
           </ul>
-          <Link
-            to="/register"
-            className="w-full bg-fct-orange hover:bg-[#D45F25] text-white font-semibold py-3 rounded flex items-center justify-center gap-2"
-          >
-            {t('register')}
-            <ChevronRight className="w-4 h-4" />
+          <Link to="/register" className="w-full bg-fct-orange hover:bg-[#D45F25] text-white font-semibold py-3 rounded flex items-center justify-center gap-2">
+            {t('register')}<ChevronRight className="w-4 h-4" />
           </Link>
-          <a
-            href="#tuning-specs"
-            className="mt-3 w-full bg-fct-orange hover:bg-[#D45F25] text-white font-semibold py-3 rounded flex items-center justify-center gap-2"
-          >
-            {t('browseTuningSpecs')}
-            <ChevronRight className="w-4 h-4" />
-          </a>
         </div>
       </div>
     </AuthLayout>

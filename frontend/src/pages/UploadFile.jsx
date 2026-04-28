@@ -13,9 +13,7 @@ export const UploadFile = () => {
   const fileInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState(null);
-  const [form, setForm] = useState({
-    brand: '', model: '', engine: '', year: '', ecu: '', note: '',
-  });
+  const [form, setForm] = useState({ brand: '', model: '', engine: '', year: '', ecu: '', note: '' });
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -36,34 +34,26 @@ export const UploadFile = () => {
     setSelectedOptions(prev => prev.includes(id) ? prev.filter(o => o !== id) : [...prev, id]);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) {
-      toast({ title: 'Please select a file', variant: 'destructive' });
-      return;
-    }
-    if (user.credits < totalCredits) {
-      toast({ title: t('notEnoughCredits'), variant: 'destructive' });
-      return;
-    }
+    if (!file) { toast({ title: 'Please select a file', variant: 'destructive' }); return; }
+    if (user.credits < totalCredits) { toast({ title: t('notEnoughCredits'), variant: 'destructive' }); return; }
     setSubmitting(true);
-    setTimeout(() => {
-      const result = submitFile({
-        fileName: file.name,
-        vehicle: `${form.brand} ${form.model} ${form.engine} (${form.year})`,
-        ecu: form.ecu,
-        tuningOptions: selectedOptions.map(id => mockTuningServices.find(o => o.id === id)?.name).filter(Boolean),
-        credits: totalCredits,
-        note: form.note,
-      });
-      if (result.success) {
-        toast({ title: 'File submitted!', description: 'Our engineers will process it shortly.' });
-        navigate('/files');
-      } else {
-        toast({ title: 'Submission failed', description: result.error, variant: 'destructive' });
-      }
-      setSubmitting(false);
-    }, 800);
+    const result = await submitFile({
+      file,
+      vehicle: `${form.brand} ${form.model} ${form.engine} (${form.year})`,
+      ecu: form.ecu,
+      tuningOptions: selectedOptions.map(id => mockTuningServices.find(o => o.id === id)?.name).filter(Boolean),
+      credits: totalCredits,
+      note: form.note,
+    });
+    setSubmitting(false);
+    if (result.success) {
+      toast({ title: 'File submitted!', description: 'Our engineers will process it shortly.' });
+      navigate('/files');
+    } else {
+      toast({ title: 'Submission failed', description: result.error, variant: 'destructive' });
+    }
   };
 
   return (
@@ -71,9 +61,7 @@ export const UploadFile = () => {
       <div className="max-w-4xl">
         <h1 className="text-2xl lg:text-3xl font-bold text-fct-dark mb-2">{t('uploadFile')}</h1>
         <p className="text-fct-muted mb-8">Upload your original ECU file and select tuning options.</p>
-
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* File drop zone */}
           <div className="bg-white rounded p-6 shadow-sm border border-gray-100">
             <h2 className="font-semibold text-fct-dark mb-4">Original file</h2>
             <div
@@ -83,13 +71,9 @@ export const UploadFile = () => {
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded p-10 text-center cursor-pointer ${dragOver ? 'border-fct-orange bg-orange-50' : 'border-gray-300 hover:border-fct-orange'}`}
             >
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
+              <input ref={fileInputRef} type="file" className="hidden"
                 accept=".bin,.ori,.frf,.kess,.sgo,.mpc,.zip"
-                onChange={(e) => setFile(e.target.files[0])}
-              />
+                onChange={(e) => setFile(e.target.files[0])} />
               {file ? (
                 <div className="flex items-center justify-center gap-3">
                   <FileUp className="w-8 h-8 text-fct-orange" />
@@ -97,9 +81,7 @@ export const UploadFile = () => {
                     <div className="font-medium text-fct-dark">{file.name}</div>
                     <div className="text-xs text-fct-muted">{(file.size / 1024).toFixed(1)} KB • {t('fileSelected')}</div>
                   </div>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setFile(null); }} className="ml-4 p-1 hover:bg-gray-100 rounded">
-                    <X className="w-4 h-4" />
-                  </button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setFile(null); }} className="ml-4 p-1 hover:bg-gray-100 rounded"><X className="w-4 h-4" /></button>
                 </div>
               ) : (
                 <>
@@ -110,8 +92,6 @@ export const UploadFile = () => {
               )}
             </div>
           </div>
-
-          {/* Vehicle */}
           <div className="bg-white rounded p-6 shadow-sm border border-gray-100">
             <h2 className="font-semibold text-fct-dark mb-4">{t('selectVehicle')}</h2>
             <div className="grid md:grid-cols-2 gap-4">
@@ -143,8 +123,6 @@ export const UploadFile = () => {
               </div>
             </div>
           </div>
-
-          {/* Tuning options */}
           <div className="bg-white rounded p-6 shadow-sm border border-gray-100">
             <h2 className="font-semibold text-fct-dark mb-4">{t('tuningOptions')}</h2>
             <div className="grid md:grid-cols-2 gap-3">
@@ -166,8 +144,6 @@ export const UploadFile = () => {
               <textarea value={form.note} onChange={(e) => setForm({...form, note: e.target.value})} rows={3} className="w-full px-3 py-2.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-fct-orange focus:ring-1 focus:ring-fct-orange" />
             </div>
           </div>
-
-          {/* Summary */}
           <div className="bg-white rounded p-6 shadow-sm border border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Coins className="w-6 h-6 text-fct-orange" />
@@ -181,12 +157,9 @@ export const UploadFile = () => {
                 </div>
               )}
             </div>
-            <button
-              type="submit"
-              disabled={submitting || !file}
-              className="bg-fct-orange hover:bg-[#D45F25] text-white font-semibold px-6 py-3 rounded flex items-center gap-2 disabled:opacity-60"
-            >
-              {submitting ? '...' : t('submitFile')}<ChevronRight className="w-4 h-4" />
+            <button type="submit" disabled={submitting || !file}
+              className="bg-fct-orange hover:bg-[#D45F25] text-white font-semibold px-6 py-3 rounded flex items-center gap-2 disabled:opacity-60">
+              {submitting ? 'Uploading...' : t('submitFile')}<ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </form>
