@@ -47,6 +47,7 @@ export const vehiclesApi = {
 
 export const optionsApi = {
   tuningTypes: () => api.get('/options/tuning-types').then(r => r.data),
+  additional: () => api.get('/options/additional').then(r => r.data),
   tools: () => api.get('/options/tools').then(r => r.data),
 };
 

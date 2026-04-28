@@ -214,6 +214,18 @@ backend:
           agent: "testing"
           comment: "✅ ADMIN TESTS PASSED: All admin operations (9/9 tests). Users list, files list with filters, stats, credit adjustment (+10 credits), file status update (pending->in_progress->completed), tuned file upload, invalid status validation, proper 403 authorization checks."
 
+  - task: "Vehicle and options endpoints (brands, models, generations, engines, tuning-types, additional, tools)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ VEHICLE & OPTIONS SMOKE TEST PASSED: All 28 tests passed (100% success rate). Vehicles endpoints: 120+ brands including all required ones, Ferrari cascade fallback working, BMW models with 'Otherwise, namely' appended. Options endpoints: 15 tuning types with correct credits, 40+ additional options, tools endpoint with all required fields. Admin auth regression test passed."
+
 frontend:
   - task: "Auth pages, dashboard, upload, files, credits, account, support, admin panel"
     implemented: true
@@ -279,3 +291,24 @@ agent_communication:
         - All 5 credit packages available (pkg_5, pkg_10, pkg_25, pkg_50, pkg_100)
         
         Backend is production-ready. No issues found.
+    - agent: "testing"
+      message: |
+        ✅ VEHICLE & OPTIONS ENDPOINTS SMOKE TEST COMPLETE - ALL TESTS PASSED (28/28 - 100% SUCCESS RATE)
+        
+        Comprehensive smoke test completed for vehicle and options endpoints as requested:
+        
+        🚗 VEHICLES ENDPOINTS: All working correctly
+        - GET /api/vehicles/brands: 120+ brands including all required ones (Audi, BMW, Ferrari, Tesla, etc.)
+        - "Otherwise, namely" correctly excluded from brands list (only used for cascade fallback)
+        - Ferrari models: Returns ['Otherwise, namely'] only (no detailed data)
+        - BMW models: Returns BMW models PLUS "Otherwise, namely" appended at end
+        - Ferrari generations/engines: Proper cascade fallback with hp=0, kw=0
+        
+        ⚙️ OPTIONS ENDPOINTS: All data structures correct
+        - GET /api/options/tuning-types: 15 entries with corrected names and credits
+        - GET /api/options/additional: 40+ items with proper id/name/credits structure
+        - GET /api/options/tools: All required fields (toolTypes, readMethods, gearboxes, octaneRatings, vehicleTypes, timeFrames)
+        
+        🔐 AUTH REGRESSION: Admin login working (admin@fast-chiptuningfiles.com / admin1234, is_admin=true)
+        
+        All endpoints responding correctly with proper data structures and validation.

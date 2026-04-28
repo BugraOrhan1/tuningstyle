@@ -107,40 +107,117 @@ CREDIT_PACKAGES = {
 }
 
 TUNING_TYPES = [
-    {'id': 'stage1_car', 'name': 'Car Tuning (Stage 1)', 'credits': 1.0, 'category': 'car'},
-    {'id': 'stage2_car', 'name': 'Car Tuning (Stage 2)', 'credits': 1.2, 'category': 'car'},
-    {'id': 'stage3_car', 'name': 'Car Tuning (Stage 3)', 'credits': 3.0, 'category': 'car'},
-    {'id': 'tcu_stage1', 'name': 'TCU Tuning (Stage 1)', 'description': 'Includes internal torque and shifting speed faster', 'credits': 1.0, 'category': 'tcu'},
-    {'id': 'options_car', 'name': 'Only options (Car)', 'credits': 0.0, 'category': 'options'},
-    {'id': 'options_tcu', 'name': 'Only options (TCU)', 'credits': 0.0, 'category': 'options'},
-    {'id': 'stage1_truck', 'name': 'Truck/Agriculture tuning (Stage 1)', 'credits': 1.0, 'category': 'truck'},
-    {'id': 'options_truck', 'name': 'Only options (Truck/Agriculture)', 'credits': 0.0, 'category': 'options'},
-    {'id': 'checksum', 'name': 'Checksum (if possible)', 'credits': 0.0, 'category': 'service'},
-    {'id': 'immo_off', 'name': 'Immo off (if possible)', 'credits': 1.0, 'category': 'service'},
-    {'id': 'egs_conversion', 'name': 'EGS Conversion', 'credits': 2.0, 'category': 'service'},
-    {'id': 'back_to_stock', 'name': 'Back to stock', 'credits': 0.2, 'category': 'service'},
-    {'id': 'mapswitch', 'name': 'MapSwitch Simos 18.X EDC17.X Med17.7.X med9.X MG1 MD1', 'credits': 4.0, 'category': 'service'},
-    {'id': 'review', 'name': 'Tuning file review', 'credits': 0.5, 'category': 'service'},
-    {'id': 'ecu_clone', 'name': 'ECU Clone Service', 'credits': 0.5, 'category': 'service'},
+    {'id': 'stage1_car', 'name': 'Car Tuning (Stage 1)', 'credits': 1.0, 'category': 'main'},
+    {'id': 'stage2_car', 'name': 'Car Tuning (Stage 2)', 'credits': 1.2, 'category': 'main'},
+    {'id': 'stage3_car', 'name': 'Car Tuning (Stage 3)', 'credits': 3.0, 'category': 'main'},
+    {'id': 'tcu_stage1', 'name': 'TCU Tuning (Stage 1)', 'description': 'Includes internal torque and shifting speed faster', 'credits': 1.0, 'category': 'main'},
+    {'id': 'options_car', 'name': 'Only options (Car)', 'credits': 0.0, 'category': 'main'},
+    {'id': 'options_tcu', 'name': 'Only options (TCU)', 'credits': 0.0, 'category': 'main'},
+    {'id': 'stage1_truck', 'name': 'Truck/Agriculture tuning (Stage 1)', 'credits': 1.0, 'category': 'main'},
+    {'id': 'options_truck', 'name': 'Only options (Truck/Agriculture)', 'credits': 0.0, 'category': 'main'},
+    {'id': 'checksum', 'name': 'Checksum (if possible)', 'credits': 0.5, 'category': 'main'},
+    {'id': 'immo_off', 'name': 'Immo off (if possible)', 'credits': 1.0, 'category': 'main'},
+    {'id': 'e85_conversion', 'name': 'E85 Conversion', 'credits': 2.0, 'category': 'main'},
+    {'id': 'back_to_stock', 'name': 'Back to stock', 'credits': 0.2, 'category': 'main'},
+    {'id': 'mapswitch', 'name': 'MapSwitch Simos 18.X EDC17.X Med17.X med9.X MG1 MD1', 'credits': 4.0, 'category': 'main'},
+    {'id': 'review', 'name': 'Tuning file review', 'credits': 0.5, 'category': 'main'},
+    {'id': 'ecu_clone', 'name': 'ECU Clone Service', 'credits': 0.5, 'category': 'main'},
 ]
 
-TOOL_TYPES = [
-    'KESS V2', 'KESS V3', 'K-TAG', 'MPPS', 'MagicMotorsport Flex', 'MagicMotorsport Master',
-    'AutoTuner', 'CMD Flash', 'New Genius', 'New Trasdata', 'Galletto', 'Bench', 'Tricore Boot',
-    'BDM100', 'OpenPort', 'Other',
+ADDITIONAL_OPTIONS = [
+    {'id': 'adblue_scr', 'name': 'AdBlue / SCR', 'credits': 1.0},
+    {'id': 'adblue_dpf', 'name': 'AdBlue + DPF off', 'credits': 1.5},
+    {'id': 'antilag', 'name': 'Antilag', 'credits': 1.0},
+    {'id': 'cylinder_demand', 'name': 'Cylinder on Demand off', 'credits': 0.2},
+    {'id': 'decat', 'name': 'Decat', 'credits': 0.2},
+    {'id': 'dpf_opf', 'name': 'DPF / OPF', 'credits': 0.5},
+    {'id': 'dpf_egr', 'name': 'DPF / OPF + EGR', 'credits': 0.5},
+    {'id': 'dsg_fart', 'name': 'DSG Fart', 'credits': 0.5},
+    {'id': 'dtc', 'name': 'DTC', 'credits': 0.5},
+    {'id': 'eolys_fap', 'name': 'Eolys / FAP', 'credits': 0.5},
+    {'id': 'e85_flexfuel', 'name': 'E85 FlexFuel', 'credits': 2.0},
+    {'id': 'egr', 'name': 'EGR off', 'credits': 0.2},
+    {'id': 'evap', 'name': 'Evaporative Emission Control System (EVAP)', 'credits': 0.2},
+    {'id': 'exhaust_flaps', 'name': 'Exhaust Flaps', 'credits': 0.2},
+    {'id': 'hardcut', 'name': 'Hard Cut limiter (Flames)', 'credits': 1.0},
+    {'id': 'hot_cold_start', 'name': 'Hot start / Cold start FIX', 'credits': 0.5},
+    {'id': 'idle_rpm', 'name': 'Idle RPM', 'credits': 0.5},
+    {'id': 'injector_scaling', 'name': 'Injector scaling', 'credits': 1.0},
+    {'id': 'launch_control', 'name': 'Launch Control', 'credits': 0.5},
+    {'id': 'maf_off', 'name': 'MAF OFF (if possible)', 'credits': 0.5},
+    {'id': 'map_sensor', 'name': 'Map sensor Set', 'credits': 0.5},
+    {'id': 'neutral_rpm', 'name': 'Neutral RPM', 'credits': 0.2},
+    {'id': 'nox_off', 'name': 'NOx off (only Petrol cars)', 'credits': 0.5},
+    {'id': 'o2_off', 'name': 'O2 OFF', 'credits': 0.2},
+    {'id': 'opf_off', 'name': 'OPF OFF', 'credits': 0.5},
+    {'id': 'opf_egr', 'name': 'OPF + EGR OFF', 'credits': 0.5},
+    {'id': 'perf_gauge', 'name': 'Performance Gauge BMW/Mini/VAG', 'credits': 0.0},
+    {'id': 'pop_bang', 'name': 'Pop & bang/crackle map', 'credits': 1.0},
+    {'id': 'pop_bang_sport', 'name': 'Pop & bang/crackle map (Sport/button)', 'credits': 1.2},
+    {'id': 'readiness', 'name': 'Readiness Monitor', 'credits': 0.5},
+    {'id': 'rev_limiter', 'name': 'Rev Limiter', 'credits': 0.2},
+    {'id': 'warranty_patch', 'name': 'Warranty Patch (BMW/Mini/VAG)', 'credits': 1.0},
+    {'id': 'sap', 'name': 'Secundairy Air Pump (SAP)', 'credits': 0.5},
+    {'id': 'smoke_mapping', 'name': 'Smoke mapping (Diesel)', 'credits': 1.0},
+    {'id': 'startstop_off', 'name': 'Start / Stop system off', 'credits': 0.5},
+    {'id': 'startup_roar', 'name': 'Startup roar', 'credits': 0.5},
+    {'id': 'swirl_flaps', 'name': 'Swirl Flaps off', 'credits': 0.5},
+    {'id': 'torque_mon', 'name': 'Torque Monitoring off', 'credits': 0.5},
+    {'id': 'vmax_off', 'name': 'V-Max Off', 'credits': 0.0},
+    {'id': 'vmax_custom', 'name': 'V-Max Limited to custom speed', 'credits': 0.5},
 ]
 
-READ_METHODS = ['OBD', 'Bench', 'Boot', 'BDM', 'JTAG', 'Slave', 'Master', 'Tricore', 'Other']
+TOOL_TYPES = ['Master', 'Slave']
 
-GEARBOXES = ['Manual', 'Automatic', 'DSG/DCT', 'CVT', 'Tiptronic', 'AMT', 'Other']
+READ_METHODS = [
+    'Alientech Kess', 'Alientech KTAG', 'Alientech Powergate',
+    'Autotuner Bench', 'Autotuner Bootmode', 'Autotuner OBD',
+    'bFlash Bench', 'bFlash BOOT', 'bFlash OBD',
+    'Bitbox', 'BS OBD', 'BS toolbox', 'BS Tricore Boottool',
+    'CMD BDM', 'CMD Bench', 'CMD OBD', 'CMD Tricore Boottool',
+    'Dimsport Genius', 'Dimsport New Trasdata',
+    'Eprom programmer', 'EVC BDM', 'EVC BSL',
+    'FC200 BENCH', 'FC200 OBD',
+    'Femto (BMW tool)', 'FGtech',
+    'FOXflash BENCH', 'FOXflash OBD',
+    'Frieling i-Boot', 'Frieling i-Flash', 'Frieling SPI Wizard',
+    'Galetto', 'Hptuners',
+    'KT200 BENCH', 'KT200 OBD',
+    'Magic Motorsport MAGPRO Bench/Flex',
+    'Magic Motorsport MAGPRO Bootmode',
+    'Magic Motorsport MAGPRO OBD',
+    'MPPS', 'PCM-Flash',
+    'Pemicro Nexus Debugger', 'Piasini Serial Suite',
+    'Otherwise, namely',
+]
 
-OCTANE_RATINGS = ['95 RON', '98 RON', '100 RON', '102+ RON', 'E85']
+GEARBOXES = ['5 speed', '6 speed', '7 speed', 'Automatic Transmission', 'CVT', 'DCT', 'DKG', 'DSG', 'DSG6', 'DSG7', 'Multitronic', 'SMG', 'SMG2', 'SMG3', 'Tiptronic']
+
+OCTANE_RATINGS = ['91 AKI / 95 RON', '93 AKI / 98 RON', '95 AKI / 102 RON', 'Racegas 100+ RON / 105+ RON']
+
+VEHICLE_TYPES = ['Car', 'Truck', 'Agriculture', 'Bike', 'Boat']
 
 TIME_FRAMES = [
-    {'id': 'standard', 'name': 'Standard (5-10 min during business hours)'},
-    {'id': 'priority', 'name': 'Priority (within 1 hour)'},
-    {'id': 'overnight', 'name': 'Overnight'},
-    {'id': 'next_day', 'name': 'Next business day'},
+    {'id': 'asap', 'name': 'ASAP'},
+    {'id': '2-3h', 'name': '2-3 hours'},
+    {'id': '5-6h', 'name': '5-6 hours'},
+]
+
+# Additional brands without detailed cascade data (user picks Otherwise, namely for model/engine)
+EXTRA_BRANDS = [
+    'Acura', 'Alpina', 'Alpine', 'Aston Martin', 'BAIC', 'BYD', 'Bentley', 'Bestune',
+    'Buick', 'CMC', 'Cadillac', 'Case IH', 'Caterpillar', 'Challenger', 'Changan',
+    'Changan Nevo', 'Chery', 'Chevrolet', 'Chrysler', 'Claas', 'DAF', 'DS', 'Daewoo',
+    'Dallara', 'Deepal', 'Deutz', 'Dodge', 'Donkervoort', 'Fendt', 'Ferrari',
+    'Freightliner', 'GAC', 'GMC', 'GWM', 'Geely', 'Genesis', 'Hitachi', 'Holden',
+    'Hongqi', 'Hummer', 'Ineos', 'Infiniti', 'Isuzu', 'JCB', 'Jac', 'Jaguar',
+    'Jetour', 'John Deere', 'Krone', 'Lamborghini', 'Lamborghini Tractors', 'Lancia',
+    'Lexus', 'Lincoln', 'Lindner', 'Lotus', 'Luxgen', 'Lynk & Co', 'MAN LCV',
+    'MAN Trucks', 'MG', 'Mack', 'Mahindra', 'Maserati', 'Massey Ferguson', 'Mc Cormick',
+    'McLaren', 'Mercedes-Benz Trucks', 'Mercury', 'New Holland', 'Oldsmobile', 'Pontiac',
+    'Proton', 'Renault Trucks', 'Roewe', 'Rolls Royce', 'Rover', 'Saab', 'Same',
+    'Saturn', 'Scania Trucks', 'Smart', 'SsangYong', 'Steyr', 'Suzuki', 'Tata',
+    'Valtra', 'Vauxhall', 'Volvo Trucks', 'WEY',
 ]
 
 
@@ -680,33 +757,58 @@ async def root():
 # ---------- Vehicles (cascading dropdown) ----------
 @api_router.get("/vehicles/brands")
 async def vehicles_brands():
-    return get_brands()
+    detailed = get_brands()
+    combined = sorted(set(detailed + EXTRA_BRANDS))
+    return combined
 
 
 @api_router.get("/vehicles/models")
 async def vehicles_models(brand: str):
-    return get_models(brand)
+    models = get_models(brand)
+    if not models:
+        return ['Otherwise, namely']
+    return models + ['Otherwise, namely']
 
 
 @api_router.get("/vehicles/generations")
 async def vehicles_generations(brand: str, model: str):
-    return get_generations(brand, model)
+    if model == 'Otherwise, namely':
+        return ['Otherwise, namely']
+    gens = get_generations(brand, model)
+    if not gens:
+        return ['Otherwise, namely']
+    return gens + ['Otherwise, namely']
 
 
 @api_router.get("/vehicles/engines")
 async def vehicles_engines(brand: str, model: str, generation: str):
-    return get_engines(brand, model, generation)
+    if generation == 'Otherwise, namely' or model == 'Otherwise, namely':
+        return [{'name': 'Otherwise, namely', 'hp': 0, 'kw': 0, 'fuel': 'Other', 'ecus': []}]
+    engs = get_engines(brand, model, generation)
+    if not engs:
+        return [{'name': 'Otherwise, namely', 'hp': 0, 'kw': 0, 'fuel': 'Other', 'ecus': []}]
+    return engs + [{'name': 'Otherwise, namely', 'hp': 0, 'kw': 0, 'fuel': 'Other', 'ecus': []}]
 
 
 @api_router.get("/vehicles/ecus")
 async def vehicles_ecus(brand: str, model: str, generation: str, engine: str):
-    return get_ecus(brand, model, generation, engine)
+    if engine == 'Otherwise, namely':
+        return ['Otherwise, namely']
+    ecus = get_ecus(brand, model, generation, engine)
+    if not ecus:
+        return ['Otherwise, namely']
+    return ecus + ['Otherwise, namely']
 
 
 # ---------- Form options ----------
 @api_router.get("/options/tuning-types")
 async def options_tuning_types():
     return TUNING_TYPES
+
+
+@api_router.get("/options/additional")
+async def options_additional():
+    return ADDITIONAL_OPTIONS
 
 
 @api_router.get("/options/tools")
@@ -716,6 +818,7 @@ async def options_tools():
         'readMethods': READ_METHODS,
         'gearboxes': GEARBOXES,
         'octaneRatings': OCTANE_RATINGS,
+        'vehicleTypes': VEHICLE_TYPES,
         'timeFrames': TIME_FRAMES,
     }
 

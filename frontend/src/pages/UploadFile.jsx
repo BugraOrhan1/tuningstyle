@@ -6,6 +6,8 @@ import { vehiclesApi, optionsApi } from '../api/client';
 import { Upload, FileUp, X, Coins, AlertCircle, Clock, ChevronRight, Plus } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 
+const OTHER = 'Otherwise, namely';
+
 const Section = ({ title, children }) => (
   <div className="bg-white rounded shadow-sm border border-gray-100 mb-4">
     <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
@@ -15,7 +17,7 @@ const Section = ({ title, children }) => (
   </div>
 );
 
-const Field = ({ label, optional, children, span = 'md:col-span-1' }) => (
+const Field = ({ label, optional, children, span = '' }) => (
   <div className={span}>
     <label className="block text-xs font-medium text-fct-dark mb-1.5">
       {label} {optional && <span className="text-fct-muted font-normal">(optional)</span>}
@@ -43,11 +45,32 @@ const Input = (props) => (
   />
 );
 
+// Cascading select with "Otherwise, namely" custom text fallback
+const CascadeSelect = ({ value, customValue, onChange, onCustomChange, options, disabled, placeholder = 'Make your choice', getLabel = (o) => o, getKey = (o) => o }) => {
+  const isOther = value === OTHER;
+  return (
+    <div className="space-y-2">
+      <Select value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}>
+        <option value="">{placeholder}</option>
+        {options.map(o => <option key={getKey(o)} value={getKey(o)}>{getLabel(o)}</option>)}
+      </Select>
+      {isOther && (
+        <Input
+          value={customValue || ''}
+          onChange={(e) => onCustomChange(e.target.value)}
+          placeholder="Specify..."
+        />
+      )}
+    </div>
+  );
+};
+
 export const UploadFile = () => {
   const { user, t, submitFile } = useApp();
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef(null);
+  const tcuFileInputRef = useRef(null);
   const attachInputRef = useRef(null);
 
   const [brands, setBrands] = useState([]);
@@ -56,81 +79,114 @@ export const UploadFile = () => {
   const [engines, setEngines] = useState([]);
   const [ecus, setEcus] = useState([]);
   const [tuningTypes, setTuningTypes] = useState([]);
-  const [tools, setTools] = useState({ toolTypes: [], readMethods: [], gearboxes: [], octaneRatings: [], timeFrames: [] });
+  const [additionalOptions, setAdditionalOptions] = useState([]);
+  const [tools, setTools] = useState({
+    toolTypes: [], readMethods: [], gearboxes: [], octaneRatings: [],
+    vehicleTypes: [], timeFrames: [],
+  });
 
   const [form, setForm] = useState({
-    brand: '', model: '', generation: '', engine: '',
+    vehicleType: 'Car',
+    brand: '', brandCustom: '',
+    model: '', modelCustom: '',
+    generation: '', generationCustom: '',
+    engine: '', engineCustom: '',
+    ecu: '', ecuCustom: '',
     engineHp: '', engineKw: '', year: '', gearbox: '',
     licensePlate: '', vin: '', octane: '',
-    ecu: '', toolType: '', readMethod: '',
+    toolType: '', readMethod: '', readMethodCustom: '',
     hardwareNumber: '', softwareNumber: '',
     tuningType: '', tuningOptions: [],
     modifiedParts: '', modifiedPartsDetails: '',
-    timeFrame: 'standard', note: '',
+    timeFrame: 'asap', note: '',
     acceptTerms: false, acceptRefund: false,
   });
   const [file, setFile] = useState(null);
-  const [attachments, setAttachments] = useState([]); // [{file, title}]
+  const [tcuFile, setTcuFile] = useState(null);
+  const [attachments, setAttachments] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Load brands & options on mount
   useEffect(() => {
     vehiclesApi.brands().then(setBrands).catch(() => {});
     optionsApi.tuningTypes().then(setTuningTypes).catch(() => {});
+    optionsApi.additional().then(setAdditionalOptions).catch(() => {});
     optionsApi.tools().then(setTools).catch(() => {});
   }, []);
 
   // Cascading
   useEffect(() => {
-    if (form.brand) vehiclesApi.models(form.brand).then(setModels);
-    else setModels([]);
-    setForm(prev => ({ ...prev, model: '', generation: '', engine: '', ecu: '', engineHp: '', engineKw: '' }));
+    if (form.brand && form.brand !== OTHER) {
+      vehiclesApi.models(form.brand).then(setModels);
+    } else if (form.brand === OTHER) {
+      setModels([OTHER]);
+    } else {
+      setModels([]);
+    }
+    setForm(prev => ({ ...prev, model: '', modelCustom: '', generation: '', engine: '', ecu: '', engineHp: '', engineKw: '' }));
     // eslint-disable-next-line
   }, [form.brand]);
 
   useEffect(() => {
-    if (form.brand && form.model) vehiclesApi.generations(form.brand, form.model).then(setGenerations);
-    else setGenerations([]);
-    setForm(prev => ({ ...prev, generation: '', engine: '', ecu: '', engineHp: '', engineKw: '' }));
+    const brandToUse = form.brand === OTHER ? form.brandCustom : form.brand;
+    if (form.model && form.model !== OTHER && brandToUse) {
+      vehiclesApi.generations(brandToUse, form.model).then(setGenerations);
+    } else if (form.model === OTHER) {
+      setGenerations([OTHER]);
+    } else {
+      setGenerations([]);
+    }
+    setForm(prev => ({ ...prev, generation: '', generationCustom: '', engine: '', ecu: '', engineHp: '', engineKw: '' }));
     // eslint-disable-next-line
   }, [form.model]);
 
   useEffect(() => {
-    if (form.brand && form.model && form.generation) vehiclesApi.engines(form.brand, form.model, form.generation).then(setEngines);
-    else setEngines([]);
-    setForm(prev => ({ ...prev, engine: '', ecu: '', engineHp: '', engineKw: '' }));
+    const brandToUse = form.brand === OTHER ? form.brandCustom : form.brand;
+    const modelToUse = form.model === OTHER ? form.modelCustom : form.model;
+    if (form.generation && form.generation !== OTHER && brandToUse && modelToUse) {
+      vehiclesApi.engines(brandToUse, modelToUse, form.generation).then(setEngines);
+    } else if (form.generation === OTHER) {
+      setEngines([{ name: OTHER, hp: 0, kw: 0, fuel: 'Other', ecus: [] }]);
+    } else {
+      setEngines([]);
+    }
+    setForm(prev => ({ ...prev, engine: '', engineCustom: '', ecu: '', engineHp: '', engineKw: '' }));
     // eslint-disable-next-line
   }, [form.generation]);
 
-  // When engine changes, auto-populate HP/kW and ECUs
   useEffect(() => {
     const found = engines.find(e => e.name === form.engine);
-    if (found) {
-      setEcus(found.ecus || []);
-      setForm(prev => ({ ...prev, engineHp: String(found.hp), engineKw: String(found.kw), ecu: found.ecus?.[0] || '' }));
+    if (found && found.name !== OTHER) {
+      setEcus(found.ecus.length ? [...found.ecus, OTHER] : [OTHER]);
+      setForm(prev => ({
+        ...prev,
+        engineHp: String(found.hp || ''),
+        engineKw: String(found.kw || ''),
+        ecu: found.ecus[0] || '',
+      }));
+    } else if (form.engine === OTHER) {
+      setEcus([OTHER]);
+      setForm(prev => ({ ...prev, engineHp: '', engineKw: '', ecu: '' }));
     } else {
       setEcus([]);
-      setForm(prev => ({ ...prev, ecu: '', engineHp: '', engineKw: '' }));
     }
     // eslint-disable-next-line
   }, [form.engine, engines]);
 
   const update = (k) => (e) => setForm(prev => ({ ...prev, [k]: e?.target ? e.target.value : e }));
 
-  // Calculate credits
   const baseCredits = (() => {
     const tt = tuningTypes.find(t => t.id === form.tuningType);
     return tt ? tt.credits : 0;
   })();
   const optionsCredits = form.tuningOptions.reduce((s, id) => {
-    const o = tuningTypes.find(t => t.id === id);
+    const o = additionalOptions.find(t => t.id === id);
     return s + (o ? o.credits : 0);
   }, 0);
   const totalCreditsFloat = baseCredits + optionsCredits;
   const totalCredits = Math.ceil(totalCreditsFloat);
 
-  const toggleOption = (id) => {
+  const toggleAdditional = (id) => {
     setForm(prev => ({
       ...prev,
       tuningOptions: prev.tuningOptions.includes(id)
@@ -155,18 +211,26 @@ export const UploadFile = () => {
     if (!file) { toast({ title: 'Please select your file to modify', variant: 'destructive' }); return; }
     if (!form.tuningType) { toast({ title: 'Please select a tuning type', variant: 'destructive' }); return; }
     if (!form.acceptTerms || !form.acceptRefund) { toast({ title: 'Please accept terms and refund policy', variant: 'destructive' }); return; }
-    if (user.credits < totalCredits) { toast({ title: t('notEnoughCredits'), variant: 'destructive' }); return; }
+    if ((user.credits || 0) < totalCredits) { toast({ title: t('notEnoughCredits'), variant: 'destructive' }); return; }
+
+    const resolve = (val, custom) => val === OTHER ? custom : val;
+    const finalBrand = resolve(form.brand, form.brandCustom);
+    const finalModel = resolve(form.model, form.modelCustom);
+    const finalGen = resolve(form.generation, form.generationCustom);
+    const finalEngine = resolve(form.engine, form.engineCustom);
+    const finalEcu = resolve(form.ecu, form.ecuCustom);
+    const finalReadMethod = form.readMethod === OTHER ? form.readMethodCustom : form.readMethod;
 
     setSubmitting(true);
     const tuningTypeName = tuningTypes.find(t => t.id === form.tuningType)?.name || '';
-    const optionNames = form.tuningOptions.map(id => tuningTypes.find(t => t.id === id)?.name).filter(Boolean);
+    const optionNames = form.tuningOptions.map(id => additionalOptions.find(t => t.id === id)?.name).filter(Boolean);
     const result = await submitFile({
       file,
-      vehicle: `${form.brand} ${form.model} ${form.generation} ${form.engine}`.trim(),
-      brand: form.brand,
-      model: form.model,
-      generation: form.generation,
-      engine: form.engine,
+      vehicle: `${form.vehicleType}: ${finalBrand} ${finalModel} ${finalGen} ${finalEngine}`.trim(),
+      brand: finalBrand,
+      model: finalModel,
+      generation: finalGen,
+      engine: finalEngine,
       engineHp: form.engineHp,
       engineKw: form.engineKw,
       year: form.year,
@@ -174,9 +238,9 @@ export const UploadFile = () => {
       licensePlate: form.licensePlate,
       vin: form.vin,
       octane: form.octane,
-      ecu: form.ecu,
+      ecu: finalEcu,
       toolType: form.toolType,
-      readMethod: form.readMethod,
+      readMethod: finalReadMethod,
       hardwareNumber: form.hardwareNumber,
       softwareNumber: form.softwareNumber,
       tuningType: tuningTypeName,
@@ -222,41 +286,67 @@ export const UploadFile = () => {
           <Section title="Vehicle">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
               <Field label="Make">
-                <Select value={form.brand} onChange={update('brand')} required>
-                  <option value="">Make your choice</option>
-                  {brands.map(b => <option key={b} value={b}>{b}</option>)}
-                </Select>
+                <CascadeSelect
+                  value={form.brand}
+                  customValue={form.brandCustom}
+                  onChange={(v) => setForm(prev => ({ ...prev, brand: v }))}
+                  onCustomChange={(v) => setForm(prev => ({ ...prev, brandCustom: v }))}
+                  options={brands}
+                />
               </Field>
               <Field label="Model">
-                <Select value={form.model} onChange={update('model')} disabled={!form.brand} required>
-                  <option value="">Make your choice</option>
-                  {models.map(m => <option key={m} value={m}>{m}</option>)}
-                </Select>
+                <CascadeSelect
+                  value={form.model}
+                  customValue={form.modelCustom}
+                  onChange={(v) => setForm(prev => ({ ...prev, model: v }))}
+                  onCustomChange={(v) => setForm(prev => ({ ...prev, modelCustom: v }))}
+                  options={models}
+                  disabled={!form.brand}
+                />
               </Field>
               <Field label="Generation">
-                <Select value={form.generation} onChange={update('generation')} disabled={!form.model} required>
-                  <option value="">Make your choice</option>
-                  {generations.map(g => <option key={g} value={g}>{g}</option>)}
-                </Select>
+                <CascadeSelect
+                  value={form.generation}
+                  customValue={form.generationCustom}
+                  onChange={(v) => setForm(prev => ({ ...prev, generation: v }))}
+                  onCustomChange={(v) => setForm(prev => ({ ...prev, generationCustom: v }))}
+                  options={generations}
+                  disabled={!form.model}
+                />
               </Field>
               <Field label="Engine">
-                <Select value={form.engine} onChange={update('engine')} disabled={!form.generation} required>
-                  <option value="">Make your choice</option>
-                  {engines.map(e => <option key={e.name} value={e.name}>{e.name} ({e.hp}hp / {e.fuel})</option>)}
-                </Select>
+                <CascadeSelect
+                  value={form.engine}
+                  customValue={form.engineCustom}
+                  onChange={(v) => setForm(prev => ({ ...prev, engine: v }))}
+                  onCustomChange={(v) => setForm(prev => ({ ...prev, engineCustom: v }))}
+                  options={engines}
+                  disabled={!form.generation}
+                  getKey={(o) => o.name}
+                  getLabel={(o) => o.name === OTHER ? OTHER : `${o.name} (${o.hp}hp / ${o.fuel})`}
+                />
               </Field>
               <Field label="ECU">
-                <Select value={form.ecu} onChange={update('ecu')} disabled={!form.engine} required>
-                  <option value="">Make your choice</option>
-                  {ecus.map(e => <option key={e} value={e}>{e}</option>)}
-                </Select>
+                <CascadeSelect
+                  value={form.ecu}
+                  customValue={form.ecuCustom}
+                  onChange={(v) => setForm(prev => ({ ...prev, ecu: v }))}
+                  onCustomChange={(v) => setForm(prev => ({ ...prev, ecuCustom: v }))}
+                  options={ecus}
+                  disabled={!form.engine}
+                />
               </Field>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <Field label="Engine HP">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <Field label="Vehicle type" optional>
+                <Select value={form.vehicleType} onChange={update('vehicleType')}>
+                  {tools.vehicleTypes.map(v => <option key={v} value={v}>{v}</option>)}
+                </Select>
+              </Field>
+              <Field label="Engine HP" optional>
                 <Input type="number" value={form.engineHp} onChange={update('engineHp')} placeholder="e.g. 184" />
               </Field>
-              <Field label="Engine kW">
+              <Field label="Engine kW" optional>
                 <Input type="number" value={form.engineKw} onChange={update('engineKw')} placeholder="e.g. 135" />
               </Field>
             </div>
@@ -300,10 +390,13 @@ export const UploadFile = () => {
                 </Select>
               </Field>
               <Field label="Read method">
-                <Select value={form.readMethod} onChange={update('readMethod')} required>
-                  <option value="">Make your choice</option>
-                  {tools.readMethods.map(r => <option key={r} value={r}>{r}</option>)}
-                </Select>
+                <CascadeSelect
+                  value={form.readMethod}
+                  customValue={form.readMethodCustom}
+                  onChange={(v) => setForm(prev => ({ ...prev, readMethod: v }))}
+                  onCustomChange={(v) => setForm(prev => ({ ...prev, readMethodCustom: v }))}
+                  options={tools.readMethods}
+                />
               </Field>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -329,36 +422,38 @@ export const UploadFile = () => {
                     className="accent-[#ED6E2E]"
                   />
                   <span className="text-sm text-fct-dark flex-1">
-                    {tt.name}
+                    <strong>{tt.name}</strong>
                     {tt.description && <span className="text-fct-muted"> ({tt.description})</span>}
-                    <span className="text-fct-muted"> ({tt.credits.toFixed(2)} credit{tt.credits !== 1 ? 's' : ''})</span>
+                    <span className="text-fct-muted ml-1">({tt.credits.toFixed(2)} credit{tt.credits !== 1 ? 's' : ''})</span>
                   </span>
                 </label>
               ))}
             </div>
-            {/* Optional add-on options */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <h3 className="text-xs font-semibold text-fct-muted uppercase tracking-wide mb-2">Additional options (optional)</h3>
+          </Section>
+
+          {/* Optional tuning options */}
+          {form.tuningType && (
+            <Section title="Optional tuning options">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {tuningTypes.filter(t => ['checksum', 'immo_off', 'mapswitch', 'review', 'ecu_clone', 'back_to_stock'].includes(t.id)).map(tt => (
-                  <label key={`add_${tt.id}`} className={`flex items-center gap-2 p-2 rounded cursor-pointer text-sm ${form.tuningOptions.includes(tt.id) ? 'bg-orange-50' : 'hover:bg-gray-50'}`}>
+                {additionalOptions.map(opt => (
+                  <label key={opt.id} className={`flex items-center gap-2 p-2 rounded cursor-pointer text-sm ${form.tuningOptions.includes(opt.id) ? 'bg-orange-50' : 'hover:bg-gray-50'}`}>
                     <input
                       type="checkbox"
-                      checked={form.tuningOptions.includes(tt.id)}
-                      onChange={() => toggleOption(tt.id)}
+                      checked={form.tuningOptions.includes(opt.id)}
+                      onChange={() => toggleAdditional(opt.id)}
                       className="accent-[#ED6E2E]"
                     />
-                    <span className="flex-1">{tt.name}</span>
-                    <span className="text-xs text-fct-orange font-semibold">+{tt.credits.toFixed(2)}</span>
+                    <span className="flex-1">{opt.name}</span>
+                    <span className="text-xs text-fct-orange font-semibold">{opt.credits === 0 ? 'free' : `+${opt.credits.toFixed(2)}`}</span>
                   </label>
                 ))}
               </div>
-            </div>
-          </Section>
+            </Section>
+          )}
 
           {/* File to modify */}
           <Section title="File to modify">
-            <p className="text-xs text-fct-muted mb-2">Only files smaller than 25 MB</p>
+            <p className="text-xs text-fct-muted mb-2">Only files smaller than 20 MB</p>
             <div
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
@@ -389,11 +484,21 @@ export const UploadFile = () => {
                 </div>
               )}
             </div>
+
+            {/* TCU file */}
+            <div className="mt-4">
+              <p className="text-xs text-fct-muted mb-2">TCU file (optional - only files smaller than 20 MB)</p>
+              <input ref={tcuFileInputRef} type="file" className="hidden" onChange={(e) => setTcuFile(e.target.files[0])} />
+              <button type="button" onClick={() => tcuFileInputRef.current?.click()}
+                className={`w-full border-2 border-dashed rounded p-4 text-sm flex items-center justify-center gap-2 ${tcuFile ? 'border-green-400 text-green-700 bg-green-50/30' : 'border-gray-300 hover:border-fct-orange text-fct-muted hover:text-fct-orange'}`}>
+                {tcuFile ? <><FileUp className="w-4 h-4" />{tcuFile.name}</> : <><Plus className="w-4 h-4" />Drop TCU file here or click to browse</>}
+              </button>
+            </div>
           </Section>
 
           {/* Optional attachments */}
           <Section title="Optional attachments">
-            <p className="text-xs text-fct-muted mb-2">Only files smaller than 25 MB</p>
+            <p className="text-xs text-fct-muted mb-2">Only files smaller than 20 MB</p>
             <input ref={attachInputRef} type="file" className="hidden" onChange={(e) => { if (e.target.files[0]) addAttachment(e.target.files[0]); e.target.value = ''; }} />
             {attachments.length > 0 && (
               <div className="mb-3 space-y-2">
@@ -434,12 +539,13 @@ export const UploadFile = () => {
             </Field>
             {form.modifiedParts === 'yes' && (
               <div className="mt-3">
-                <Field label="Which modifications">
+                <p className="text-xs text-fct-muted mb-2">In order to provide you with the best possible service, please describe the modifications.</p>
+                <Field label="Modified parts installed" optional>
                   <textarea
                     rows={3}
                     value={form.modifiedPartsDetails}
                     onChange={update('modifiedPartsDetails')}
-                    placeholder="e.g. Downpipe, intake, intercooler..."
+                    placeholder="e.g. Downpipe, intake, intercooler, exhaust..."
                     className="w-full px-3 py-2.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-fct-orange focus:ring-1 focus:ring-fct-orange"
                   />
                 </Field>
@@ -451,6 +557,7 @@ export const UploadFile = () => {
           <Section title="Service">
             <Field label="Time frame">
               <Select value={form.timeFrame} onChange={update('timeFrame')}>
+                <option value="">Make your choice</option>
                 {tools.timeFrames.map(tf => <option key={tf.id} value={tf.id}>{tf.name}</option>)}
               </Select>
             </Field>
