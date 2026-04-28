@@ -119,14 +119,20 @@ export const AppProvider = ({ children }) => {
     return res;
   };
 
-  const submitFile = async ({ file, vehicle, ecu, tuningOptions, credits, note }) => {
+  const submitFile = async (formData) => {
     const fd = new FormData();
-    fd.append('file', file);
-    fd.append('vehicle', vehicle);
-    fd.append('ecu', ecu);
-    fd.append('tuningOptions', tuningOptions.join(','));
-    fd.append('credits', credits);
-    fd.append('note', note || '');
+    fd.append('file', formData.file);
+    fd.append('vehicle', formData.vehicle);
+    fd.append('ecu', formData.ecu);
+    fd.append('tuningOptions', (formData.tuningOptions || []).join(','));
+    fd.append('credits', formData.credits);
+    fd.append('note', formData.note || '');
+    // Extended fields
+    const extra = ['brand', 'model', 'generation', 'engine', 'engineHp', 'engineKw', 'year',
+      'gearbox', 'licensePlate', 'vin', 'octane', 'toolType', 'readMethod',
+      'hardwareNumber', 'softwareNumber', 'tuningType', 'modifiedParts',
+      'modifiedPartsDetails', 'timeFrame'];
+    extra.forEach(k => fd.append(k, formData[k] || ''));
     try {
       const f = await filesApi.upload(fd);
       await refreshUser();

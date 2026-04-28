@@ -13,6 +13,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
+from data.vehicles_seed import get_brands, get_models, get_generations, get_engines, get_ecus
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -105,6 +106,43 @@ CREDIT_PACKAGES = {
     'pkg_100': {'credits': 100, 'price': 800},
 }
 
+TUNING_TYPES = [
+    {'id': 'stage1_car', 'name': 'Car Tuning (Stage 1)', 'credits': 1.0, 'category': 'car'},
+    {'id': 'stage2_car', 'name': 'Car Tuning (Stage 2)', 'credits': 1.2, 'category': 'car'},
+    {'id': 'stage3_car', 'name': 'Car Tuning (Stage 3)', 'credits': 3.0, 'category': 'car'},
+    {'id': 'tcu_stage1', 'name': 'TCU Tuning (Stage 1)', 'description': 'Includes internal torque and shifting speed faster', 'credits': 1.0, 'category': 'tcu'},
+    {'id': 'options_car', 'name': 'Only options (Car)', 'credits': 0.0, 'category': 'options'},
+    {'id': 'options_tcu', 'name': 'Only options (TCU)', 'credits': 0.0, 'category': 'options'},
+    {'id': 'stage1_truck', 'name': 'Truck/Agriculture tuning (Stage 1)', 'credits': 1.0, 'category': 'truck'},
+    {'id': 'options_truck', 'name': 'Only options (Truck/Agriculture)', 'credits': 0.0, 'category': 'options'},
+    {'id': 'checksum', 'name': 'Checksum (if possible)', 'credits': 0.0, 'category': 'service'},
+    {'id': 'immo_off', 'name': 'Immo off (if possible)', 'credits': 1.0, 'category': 'service'},
+    {'id': 'egs_conversion', 'name': 'EGS Conversion', 'credits': 2.0, 'category': 'service'},
+    {'id': 'back_to_stock', 'name': 'Back to stock', 'credits': 0.2, 'category': 'service'},
+    {'id': 'mapswitch', 'name': 'MapSwitch Simos 18.X EDC17.X Med17.7.X med9.X MG1 MD1', 'credits': 4.0, 'category': 'service'},
+    {'id': 'review', 'name': 'Tuning file review', 'credits': 0.5, 'category': 'service'},
+    {'id': 'ecu_clone', 'name': 'ECU Clone Service', 'credits': 0.5, 'category': 'service'},
+]
+
+TOOL_TYPES = [
+    'KESS V2', 'KESS V3', 'K-TAG', 'MPPS', 'MagicMotorsport Flex', 'MagicMotorsport Master',
+    'AutoTuner', 'CMD Flash', 'New Genius', 'New Trasdata', 'Galletto', 'Bench', 'Tricore Boot',
+    'BDM100', 'OpenPort', 'Other',
+]
+
+READ_METHODS = ['OBD', 'Bench', 'Boot', 'BDM', 'JTAG', 'Slave', 'Master', 'Tricore', 'Other']
+
+GEARBOXES = ['Manual', 'Automatic', 'DSG/DCT', 'CVT', 'Tiptronic', 'AMT', 'Other']
+
+OCTANE_RATINGS = ['95 RON', '98 RON', '100 RON', '102+ RON', 'E85']
+
+TIME_FRAMES = [
+    {'id': 'standard', 'name': 'Standard (5-10 min during business hours)'},
+    {'id': 'priority', 'name': 'Priority (within 1 hour)'},
+    {'id': 'overnight', 'name': 'Overnight'},
+    {'id': 'next_day', 'name': 'Next business day'},
+]
+
 
 # ---------- Helpers ----------
 def hash_password(pw: str) -> str:
@@ -157,8 +195,27 @@ def public_file(f: dict) -> dict:
         'userName': f.get('userName'),
         'fileName': f.get('fileName'),
         'vehicle': f.get('vehicle'),
+        'brand': f.get('brand'),
+        'model': f.get('model'),
+        'generation': f.get('generation'),
+        'engine': f.get('engine'),
+        'engineHp': f.get('engineHp'),
+        'engineKw': f.get('engineKw'),
+        'year': f.get('year'),
+        'gearbox': f.get('gearbox'),
+        'licensePlate': f.get('licensePlate'),
+        'vin': f.get('vin'),
+        'octane': f.get('octane'),
         'ecu': f.get('ecu'),
+        'toolType': f.get('toolType'),
+        'readMethod': f.get('readMethod'),
+        'hardwareNumber': f.get('hardwareNumber'),
+        'softwareNumber': f.get('softwareNumber'),
+        'tuningType': f.get('tuningType'),
         'tuningOptions': f.get('tuningOptions', []),
+        'modifiedParts': f.get('modifiedParts'),
+        'modifiedPartsDetails': f.get('modifiedPartsDetails'),
+        'timeFrame': f.get('timeFrame'),
         'status': f.get('status', 'pending'),
         'credits': f.get('credits', 0),
         'note': f.get('note', ''),
@@ -280,6 +337,25 @@ async def upload_file(
     tuningOptions: str = Form(''),  # comma-separated
     credits: int = Form(...),
     note: str = Form(''),
+    brand: str = Form(''),
+    model: str = Form(''),
+    generation: str = Form(''),
+    engine: str = Form(''),
+    engineHp: str = Form(''),
+    engineKw: str = Form(''),
+    year: str = Form(''),
+    gearbox: str = Form(''),
+    licensePlate: str = Form(''),
+    vin: str = Form(''),
+    octane: str = Form(''),
+    toolType: str = Form(''),
+    readMethod: str = Form(''),
+    hardwareNumber: str = Form(''),
+    softwareNumber: str = Form(''),
+    tuningType: str = Form(''),
+    modifiedParts: str = Form(''),
+    modifiedPartsDetails: str = Form(''),
+    timeFrame: str = Form(''),
     user=Depends(get_current_user),
 ):
     if user.get('credits', 0) < credits:
@@ -300,8 +376,27 @@ async def upload_file(
         'userName': f"{user.get('firstName','')} {user.get('lastName','')}".strip(),
         'fileName': file.filename,
         'vehicle': vehicle,
+        'brand': brand,
+        'model': model,
+        'generation': generation,
+        'engine': engine,
+        'engineHp': engineHp,
+        'engineKw': engineKw,
+        'year': year,
+        'gearbox': gearbox,
+        'licensePlate': licensePlate,
+        'vin': vin,
+        'octane': octane,
         'ecu': ecu,
+        'toolType': toolType,
+        'readMethod': readMethod,
+        'hardwareNumber': hardwareNumber,
+        'softwareNumber': softwareNumber,
+        'tuningType': tuningType,
         'tuningOptions': options_list,
+        'modifiedParts': modifiedParts,
+        'modifiedPartsDetails': modifiedPartsDetails,
+        'timeFrame': timeFrame,
         'status': 'pending',
         'credits': credits,
         'note': note,
@@ -580,6 +675,49 @@ async def admin_stats(admin=Depends(require_admin)):
 @api_router.get("/")
 async def root():
     return {"message": "Fast Chiptuningfiles API", "version": "1.0"}
+
+
+# ---------- Vehicles (cascading dropdown) ----------
+@api_router.get("/vehicles/brands")
+async def vehicles_brands():
+    return get_brands()
+
+
+@api_router.get("/vehicles/models")
+async def vehicles_models(brand: str):
+    return get_models(brand)
+
+
+@api_router.get("/vehicles/generations")
+async def vehicles_generations(brand: str, model: str):
+    return get_generations(brand, model)
+
+
+@api_router.get("/vehicles/engines")
+async def vehicles_engines(brand: str, model: str, generation: str):
+    return get_engines(brand, model, generation)
+
+
+@api_router.get("/vehicles/ecus")
+async def vehicles_ecus(brand: str, model: str, generation: str, engine: str):
+    return get_ecus(brand, model, generation, engine)
+
+
+# ---------- Form options ----------
+@api_router.get("/options/tuning-types")
+async def options_tuning_types():
+    return TUNING_TYPES
+
+
+@api_router.get("/options/tools")
+async def options_tools():
+    return {
+        'toolTypes': TOOL_TYPES,
+        'readMethods': READ_METHODS,
+        'gearboxes': GEARBOXES,
+        'octaneRatings': OCTANE_RATINGS,
+        'timeFrames': TIME_FRAMES,
+    }
 
 
 # Seed admin user on startup

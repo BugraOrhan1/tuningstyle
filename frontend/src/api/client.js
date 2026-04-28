@@ -37,6 +37,19 @@ export const creditsApi = {
   transactions: () => api.get('/credits/transactions').then(r => r.data),
 };
 
+export const vehiclesApi = {
+  brands: () => api.get('/vehicles/brands').then(r => r.data),
+  models: (brand) => api.get('/vehicles/models', { params: { brand } }).then(r => r.data),
+  generations: (brand, model) => api.get('/vehicles/generations', { params: { brand, model } }).then(r => r.data),
+  engines: (brand, model, generation) => api.get('/vehicles/engines', { params: { brand, model, generation } }).then(r => r.data),
+  ecus: (brand, model, generation, engine) => api.get('/vehicles/ecus', { params: { brand, model, generation, engine } }).then(r => r.data),
+};
+
+export const optionsApi = {
+  tuningTypes: () => api.get('/options/tuning-types').then(r => r.data),
+  tools: () => api.get('/options/tools').then(r => r.data),
+};
+
 export const notificationsApi = {
   list: () => api.get('/notifications').then(r => r.data),
   readAll: () => api.post('/notifications/read-all').then(r => r.data),
