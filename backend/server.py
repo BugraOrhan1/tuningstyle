@@ -423,6 +423,11 @@ async def logout(response: Response):
     return {'success': True}
 
 
+@api_router.get("/health")
+async def health_check():
+    return {'status': 'ok'}
+
+
 @api_router.get("/auth/me")
 async def me(user=Depends(get_current_user)):
     return public_user(user)

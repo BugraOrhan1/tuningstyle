@@ -36,6 +36,12 @@ Deze zijn al in blueprint ingesteld:
 - `MONGO_TIMEOUT_MS=5000`
 - `JWT_SECRET` wordt automatisch gegenereerd
 
+Render gebruikt productie dependencies uit `backend/requirements.prod.txt`.
+
+Healthcheck endpoint:
+
+- `/api/health`
+
 Na deploy krijg je een backend URL, bv. `https://tuningstyle-api.onrender.com`.
 
 ## 3. Frontend op Netlify
@@ -52,6 +58,14 @@ Deploy stappen:
 - `REACT_APP_BACKEND_URL` = je Render backend URL
 
 5. Trigger deploy
+
+Optioneel automatisch via GitHub Actions:
+
+- Workflow: `.github/workflows/netlify-deploy.yml`
+- Vereiste GitHub secrets:
+	- `NETLIFY_AUTH_TOKEN`
+	- `NETLIFY_SITE_ID`
+	- `REACT_APP_BACKEND_URL`
 
 ## 4. Belangrijk voor auth/cookies
 
