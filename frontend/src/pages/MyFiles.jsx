@@ -63,7 +63,13 @@ export const MyFiles = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filtered.length === 0 && <tr><td colSpan={7} className="px-4 py-12 text-center text-fct-muted">No files yet. <Link to="/upload" className="text-fct-orange hover:underline">Upload your first file</Link></td></tr>}
+                {filtered.length === 0 && <tr><td colSpan={7} className="px-4 py-16 text-center">
+                  <div className="w-14 h-14 mx-auto rounded-full bg-orange-50 flex items-center justify-center mb-3">
+                    <Search className="w-6 h-6 text-fct-orange" />
+                  </div>
+                  <p className="text-sm text-fct-dark font-medium mb-1">No files match</p>
+                  <Link to="/upload" className="text-sm text-fct-orange hover:underline">Upload your first file →</Link>
+                </td></tr>}
                 {filtered.map(f => {
                   const sc = statusConfig[f.status] || statusConfig.pending;
                   return (
