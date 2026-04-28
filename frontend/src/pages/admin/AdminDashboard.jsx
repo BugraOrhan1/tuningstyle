@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { DashboardLayout } from '../components/DashboardLayout';
-import { adminApi } from '../api/client';
+import { DashboardLayout } from '../../components/DashboardLayout';
+import { adminApi } from '../../api/client';
 import { Users, FileText, Clock, CheckCircle2, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
